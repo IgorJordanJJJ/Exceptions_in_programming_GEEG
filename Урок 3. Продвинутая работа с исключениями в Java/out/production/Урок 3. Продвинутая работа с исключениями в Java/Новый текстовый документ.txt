@@ -1,0 +1,141 @@
+Напишите приложение, которое будет запрашивать у пользователя следующие данные в произвольном порядке, разделенные пробелом
+Фамилия Имя Отчество датарождения номертелефона пол
+
+Форматы данных
+фамилия, имя, отчество - строки
+датарождения - строка формата dd.mm.yyyy
+номертелефона - целое беззнаковое число без форматирования
+пол - символ латиницей f или m.
+
+Приложение должно проверить введенные данные по количеству. Если количество не совпадает с требуемым, вернуть код ошибки, обработать его и показать пользователю сообщение, что он ввел меньше и больше данных, чем требуется.
+
+Приложение должно попытаться распарсить полученные значения и выделить из них требуемые параметры. Если форматы данных не совпадают, нужно бросить исключение, соответствующее типу проблемы. Можно использовать встроенные типы java и создать свои. Исключение должно быть корректно обработано, пользователю выведено сообщение с информацией, что именно неверно.
+
+Если всё введено и обработано верно, должен создаться файл с названием, равным фамилии, в него в одну строку должны записаться полученные данные, вида
+
+ФамилияИмяОтчестводатарождения номертелефонапол
+
+Однофамильцы должны записаться в один и тот же файл, в отдельные строки.
+
+Не забудьте закрыть соединение с файлом.
+
+При возникновении проблемы с чтением-записью в файл, исключение должно быть корректно обработано, пользователь должен увидеть стектрейс ошибки.
+
+Приведу пример Java программы, которая выполняет указанные действия:
+
+java
+Copy code
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Scanner;
+
+public class UserDataApp {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Введите данные в формате: Фамилия Имя Отчество датарождения номертелефона пол");
+        String input = scanner.nextLine();
+        scanner.close();
+
+        String[] data = input.split("\\s+");
+        if (data.length != 6) {
+            System.err.println("Ошибка: введено недостаточно данных");
+            return;
+        }
+
+        String lastName = data[0];
+        String firstName = data[1];
+        String middleName = data[2];
+        String birthDate = data[3];
+        String phoneNumber = data[4];
+        String gender = data[5];
+
+        try {
+            validateData(birthDate, phoneNumber, gender);
+            String output = lastName + " " + firstName + " " + middleName + " " + birthDate + " " + phoneNumber + " " + gender;
+            writeToFile(lastName, output);
+            System.out.println("Данные успешно записаны в файл.");
+        } catch (IllegalArgumentException | IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void validateData(String birthDate, String phoneNumber, String gender) {
+        // Дополнительные проверки формата данных (по желанию)
+        // Пример: проверка формата даты рождения и номера телефона
+
+        if (!gender.equals("f") && !gender.equals("m")) {
+            throw new IllegalArgumentException("Ошибка: некорректный пол");
+        }
+    }
+
+    private static void writeToFile(String fileName, String content) throws IOException {
+        try (FileWriter writer = new FileWriter(fileName + ".txt", true)) {
+            writer.write(content + System.lineSeparator());
+        }
+    }
+}
+В этом примере программа сначала читает введенные пользователем данные, разделяет их на части и проводит базовую проверку на количество введенных данных. Затем она вызывает метод validateData для дополнительной проверки формата данных (например, даты рождения и номера телефона). Если все данные прошли проверку, программа вызывает метод writeToFile для записи данных в файл. Используется блок try-with-resources для автоматического закрытия файла после записи.
+
+
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Scanner;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+public class UserDataApp {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Введите данные в формате: Фамилия Имя Отчество датарождения номертелефона пол");
+        String input = scanner.nextLine();
+        scanner.close();
+
+        String[] data = input.split("\\s+");
+        if (data.length != 6) {
+            System.err.println("Ошибка: введено недостаточно данных");
+            return;
+        }
+
+        String lastName = data[0];
+        String firstName = data[1];
+        String middleName = data[2];
+        String birthDate = data[3];
+        String phoneNumber = data[4];
+        String gender = data[5];
+
+        try {
+            validateData(birthDate, phoneNumber, gender);
+            String output = lastName + " " + firstName + " " + middleName + " " + birthDate + " " + phoneNumber + " " + gender;
+            writeToFile(lastName, output);
+            System.out.println("Данные успешно записаны в файл.");
+        } catch (IllegalArgumentException | ParseException | IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void validateData(String birthDate, String phoneNumber, String gender) throws ParseException {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+        dateFormat.setLenient(false);
+
+        try {
+            Date parsedDate = dateFormat.parse(birthDate);
+        } catch (ParseException e) {
+            throw new IllegalArgumentException("Ошибка: некорректный формат даты рождения");
+        }
+
+        if (!gender.equals("f") && !gender.equals("m")) {
+            throw new IllegalArgumentException("Ошибка: некорректный пол");
+        }
+
+        if (!phoneNumber.matches("\\d+")) {
+            throw new IllegalArgumentException("Ошибка: некорректный формат номера телефона");
+        }
+    }
+
+    private static void writeToFile(String fileName, String content) throws IOException {
+        try (FileWriter writer = new FileWriter(fileName + ".txt", true)) {
+            writer.write(content + System.lineSeparator());
+        }
+    }
+}
